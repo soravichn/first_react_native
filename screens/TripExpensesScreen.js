@@ -48,7 +48,7 @@ export default function TripExpensesScreen(props) {
         <View className="space-y-3">
           <View className="flex-row justify-between items-center">
             <Text className={`${colors.heading} font-bold text-xl`}>Expenses</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('AddExpense')} className="p-2 px-3 bg-white border border-gray-200 rounded-full">
+            <TouchableOpacity onPress={() => navigation.navigate('AddExpense', { id, place, country })} className="p-2 px-3 bg-white border border-gray-200 rounded-full">
               <Text className={colors.heading}>Add Expense</Text>
             </TouchableOpacity>
           </View>

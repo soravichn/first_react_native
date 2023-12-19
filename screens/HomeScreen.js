@@ -1,10 +1,14 @@
-import { View, Text, TouchableOpacity, Image, FlatList } from 'react-native'
-import React from 'react'
+import { View, Text, TouchableOpacity, Image, FlatList, RefreshControl } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
 import ScreennWrapper from '../components/screennWrapper'
 import randomImage from '../assets/images/randomImage'
 import EmptyList from '../components/emptyList'
-import { useNavigation } from '@react-navigation/native'
+import { useIsFocused, useNavigation } from '@react-navigation/native'
 import { colors } from '../theme'
+import { signOut } from 'firebase/auth'
+import { auth, tripsRef } from '../config/firebase'
+import { useSelector } from 'react-redux'
+import { getDocs, orderBy, query, where } from 'firebase/firestore'
 
 const items = [
   {
@@ -29,13 +33,61 @@ const items = [
   },
 ]
 
+const formatData = (data, numColumns) => {
+  const numberOfFullRows = Math.floor(data.length / numColumns);
+  let numberOfElementsLastRow = data.length - (numberOfFullRows * numColumns);
+  while (numberOfElementsLastRow !== numColumns && numberOfElementsLastRow !== 0) {
+    data.push({ key: `blank-${numberOfElementsLastRow}`, empty: true });
+    numberOfElementsLastRow++;
+  }
+  return data;
+};
+
 export default function HomeScreen() {
   const navigation = useNavigation();
+
+  const { user } = useSelector(state => state.user);
+  const [trips, setTrips] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const isFocused = useIsFocused();
+
+  const fetchTrips = async () => {
+    try {
+      const q = query(tripsRef, where("userId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      let data = [];
+      querySnapshot.forEach(doc => {
+        data.push({ ...doc.data(), id: doc.id })
+      });
+      setTrips(data);
+    } catch (error) {
+      console.log("🚀 ~ error:", error);
+    }
+  }
+
+  useEffect(() => {
+    if (isFocused) {
+      fetchTrips();
+    }
+  }, [isFocused]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      fetchTrips();
+      setRefreshing(false);
+    }, 2000);
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+  }
   return (
     <ScreennWrapper className="flex-1">
       <View className="flex-row justify-between items-center p-4">
         <Text className={`${colors.heading} font-bold text-3xl shadow-sm`}>Expensify</Text>
-        <TouchableOpacity className="p-2 px-3 bg-white border border-gray-200 rounded-full">
+        <TouchableOpacity onPressIn={handleLogout} className="p-2 px-3 bg-white border border-gray-200 rounded-full">
           <Text className={colors.heading}>Logout</Text>
         </TouchableOpacity>
       </View>
@@ -49,9 +101,12 @@ export default function HomeScreen() {
             <Text className={colors.heading}>Add Trip</Text>
           </TouchableOpacity>
         </View>
-        <View style={{ height: 430 }}>
+        <View style={{ height: 420 }}>
           <FlatList
-            data={items}
+            refreshControl={
+              <RefreshControl tintColor={colors.button} refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            data={formatData(trips, 2)}
             numColumns={2}
             ListEmptyComponent={<EmptyList message={"You haven't recordeed any trips yet"} />}
             keyExtractor={item => item.id}
@@ -60,12 +115,15 @@ export default function HomeScreen() {
               gap: 10
             }}
             contentContainerStyle={{
-              gap: 10
+              gap: 10,
             }}
             className="mx-1"
             renderItem={({ item }) => {
+              if (item.empty === true) {
+                return <View className="invisible flex-1" />;
+              }
               return (
-                <TouchableOpacity onPress={() => navigation.navigate('TripExpenses', { ...item })} className="bg-white p-3 rounded-2xl shadow-sm flex-grow">
+                <TouchableOpacity onPress={() => navigation.navigate('TripExpenses', { ...item })} className="bg-white p-3 rounded-2xl shadow-sm flex-1">
                   <View>
                     <Image source={randomImage()} className="w-36 h-36 mb-2" />
                     <Text className={`${colors.heading} font-bold`}>{item.place}</Text>

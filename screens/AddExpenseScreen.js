@@ -5,20 +5,39 @@ import BackButton from '../components/backButton'
 import { colors } from '../theme'
 import { useNavigation } from '@react-navigation/native'
 import { categories } from '../contents'
+import Snackbar from 'react-native-snackbar'
+import { expensesRef } from '../config/firebase'
+import { addDoc } from 'firebase/firestore'
+import Loading from '../components/loading'
 
-export default function AddExpenseScreen() {
+export default function AddExpenseScreen(props) {
+  let { id } = props.route.params
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const navigation = useNavigation();
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     if (title && amount && category) {
       // good to go
-      navigation.goBack();
+      // navigation.goBack();
+      setLoading(true);
+      let doc = await addDoc(expensesRef, {
+        title,
+        amount,
+        category,
+        tripId: id
+      });
+      setLoading(false);
+      if (doc && doc.id) navigation.goBack();
     } else {
       // show error
+      Snackbar.show({
+        text: 'Plese fill all the fields!',
+        backgroundColor: 'red'
+      });
     }
   }
   return (
@@ -60,9 +79,15 @@ export default function AddExpenseScreen() {
         </View>
 
         <View>
-          <TouchableOpacity onPress={handleAddExpense} style={{ backgroundColor: colors.button }} className="my-6 rounded-full p-3 shadow-sm">
-            <Text className="text-center text-white text-lg font-bold">Add Expense</Text>
-          </TouchableOpacity>
+          {
+            loading ? (
+              <Loading />
+            ) : (
+              <TouchableOpacity onPress={handleAddExpense} style={{ backgroundColor: colors.button }} className="my-6 rounded-full p-3 shadow-sm">
+                <Text className="text-center text-white text-lg font-bold">Add Expense</Text>
+              </TouchableOpacity>
+            )
+          }
         </View>
       </View>
     </ScreennWrapper >

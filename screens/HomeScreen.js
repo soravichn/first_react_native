@@ -8,7 +8,7 @@ import { colors } from '../theme'
 import { signOut } from 'firebase/auth'
 import { auth, tripsRef } from '../config/firebase'
 import { useSelector } from 'react-redux'
-import { getDocs, orderBy, query, where } from 'firebase/firestore'
+import { getDocs, query, where } from 'firebase/firestore'
 
 const items = [
   {
@@ -53,17 +53,13 @@ export default function HomeScreen() {
   const isFocused = useIsFocused();
 
   const fetchTrips = async () => {
-    try {
-      const q = query(tripsRef, where("userId", "==", user.uid));
-      const querySnapshot = await getDocs(q);
-      let data = [];
-      querySnapshot.forEach(doc => {
-        data.push({ ...doc.data(), id: doc.id })
-      });
-      setTrips(data);
-    } catch (error) {
-      console.log("🚀 ~ error:", error);
-    }
+    const q = query(tripsRef, where("userId", "==", user.uid));
+    const querySnapshot = await getDocs(q);
+    let data = [];
+    querySnapshot.forEach(doc => {
+      data.push({ ...doc.data(), id: doc.id })
+    });
+    setTrips(data);
   }
 
   useEffect(() => {
@@ -120,7 +116,7 @@ export default function HomeScreen() {
             className="mx-1"
             renderItem={({ item }) => {
               if (item.empty === true) {
-                return <View className="invisible flex-1" />;
+                return <View className="flex-1 p-3 invisible" />;
               }
               return (
                 <TouchableOpacity onPress={() => navigation.navigate('TripExpenses', { ...item })} className="bg-white p-3 rounded-2xl shadow-sm flex-1">

@@ -1,11 +1,13 @@
-import { View, Text, TouchableOpacity, Image, FlatList } from 'react-native'
-import React from 'react'
+import { View, Text, TouchableOpacity, Image, FlatList, RefreshControl } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
 import ScreennWrapper from '../components/screennWrapper'
 import EmptyList from '../components/emptyList'
-import { useNavigation } from '@react-navigation/native'
+import { useIsFocused, useNavigation } from '@react-navigation/native'
 import { colors } from '../theme'
 import BackButton from '../components/backButton'
 import ExpenseCard from '../components/expenseCard'
+import { expensesRef } from '../config/firebase'
+import { getDocs, query, where } from 'firebase/firestore'
 
 const items = [
   {
@@ -31,6 +33,35 @@ const items = [
 export default function TripExpensesScreen(props) {
   const { id, place, country } = props.route.params;
   const navigation = useNavigation();
+
+  const isFocused = useIsFocused();
+  const [expenses, setExpenses] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchExpenses = async () => {
+    const q = query(expensesRef, where("tripId", "==", id));
+    const querySnapshot = await getDocs(q);
+    let data = [];
+    querySnapshot.forEach(doc => {
+      data.push({ ...doc.data(), id: doc.id })
+    });
+    setExpenses(data);
+  }
+
+  useEffect(() => {
+    if (isFocused) {
+      fetchExpenses();
+    }
+  }, [isFocused]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      fetchExpenses();
+      setRefreshing(false);
+    }, 2000);
+  }, []);
+
   return (
     <ScreennWrapper className="flex-1">
       <View className="px-4">
@@ -54,7 +85,10 @@ export default function TripExpensesScreen(props) {
           </View>
           <View style={{ height: 430 }}>
             <FlatList
-              data={items}
+              refreshControl={
+                <RefreshControl tintColor={colors.button} refreshing={refreshing} onRefresh={onRefresh} />
+              }
+              data={expenses}
               ListEmptyComponent={<EmptyList message={"You haven't recordeed any expenses yet"} />}
               keyExtractor={item => item.id}
               showsVerticalScrollIndicator={false}

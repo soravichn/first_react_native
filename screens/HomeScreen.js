@@ -88,7 +88,9 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
       <View className="flex-row justify-center items-center bg-blue-200 rounded-xl mx-4 mb-4">
-        <Image source={require('../assets/images/banner.png')} className="w-60 h-60" />
+        <TouchableOpacity onPress={() => navigation.navigate('Webview')}>
+          <Image source={require('../assets/images/banner.png')} className="w-60 h-60" />
+        </TouchableOpacity>
       </View>
       <View className="px-4 space-y-3">
         <View className="flex-row justify-between items-center">

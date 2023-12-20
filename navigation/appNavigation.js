@@ -11,6 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { setUser } from '../redux/slices/user';
+import WebviewScreen from '../screens/WebviewScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +31,7 @@ export default function AppNavigation() {
           <Stack.Screen options={{ headerShown: false }} name="AddTrip" component={AddTripScreen} />
           <Stack.Screen options={{ headerShown: false }} name="AddExpense" component={AddExpenseScreen} />
           <Stack.Screen options={{ headerShown: false }} name="TripExpenses" component={TripExpensesScreen} />
+          <Stack.Screen options={{ headerShown: false }} name="Webview" component={WebviewScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     );
